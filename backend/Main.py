@@ -13,7 +13,7 @@ def run_server():
     asyncio.set_event_loop(asyncio.new_event_loop())
     tornado.options.parse_command_line()
     app = ChameleonApplication()
-    print(f"Serving on port {options.port}")
+    print("Serving on port {options.port}")
     app.listen(options.port)
     tornado.ioloop.IOLoop.current().start()
 

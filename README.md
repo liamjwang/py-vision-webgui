@@ -152,3 +152,6 @@ main docs can be found at [google docs](https://docs.google.com/document/d/1qDuw
 * the [robotpy project](https://github.com/robotpy) and mainly the cscore libs
 
 * basically all of stackoverflow
+
+v4l2-ctl -d /dev/video0 -c auto_exposure=1
+v4l2-ctl -d /dev/video0 -c exposure_time_absolute=500

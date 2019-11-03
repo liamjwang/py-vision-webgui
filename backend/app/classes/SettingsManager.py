@@ -103,8 +103,9 @@ class SettingsManager(metaclass=Singleton):
 
             while device_name in self.usb_cameras_info:
                 suffix += 1
-                device_name = f"{device.name}({str(suffix)})"
-
+                device_name = "{device.name}({str(suffix)})"
+            # if len(usb_devices[i].otherPaths) == 0:
+            #     continue
             self.usb_cameras_info[device_name] = usb_devices[i]
 
     # Initiate cscore usb devices
@@ -129,10 +130,13 @@ class SettingsManager(metaclass=Singleton):
             self.usb_cameras[camera_name].setBrightness(dic["brightness"])
 
         if "exposure" in dic:
-            self.usb_cameras[camera_name].setExposureManual(dic["exposure"])
+            if "is_picam" in self.cams[camera_name]:
+                print("cannot set pi cam exposure")
+            else:
+                self.usb_cameras[camera_name].setExposureManual(dic["exposure"])
 
         if "resolution" in dic:
-            video_mode: VideoMode = self.usb_cameras[camera_name].enumerateVideoModes()[int(dic["resolution"])]
+            video_mode = self.usb_cameras[camera_name].enumerateVideoModes()[int(dic["resolution"])]
             self.cams[camera_name]["video_mode"] = {
                 "fps": video_mode.fps,
                 "width": video_mode.width,
@@ -224,16 +228,32 @@ class SettingsManager(metaclass=Singleton):
         for i in range(10):
             self.create_new_pipeline(cam_name=cam_name)
 
-        self.cams[cam_name]["path"] = self.usb_cameras_info[cam_name].otherPaths[0] if len(
-            self.usb_cameras_info[cam_name].otherPaths) == 1 else self.usb_cameras_info[cam_name].otherPaths[1]
+        numPaths = len(self.usb_cameras_info[cam_name].otherPaths)
 
-        video_mode: VideoMode = self.usb_cameras[cam_name].enumerateVideoModes()[0]
-        self.cams[cam_name]["video_mode"] = {
-            "fps": video_mode.fps,
-            "width": video_mode.width,
-            "height": video_mode.height,
-            "pixel_format": str(video_mode.pixelFormat).split('.')[1],
-        }
+        if numPaths == 1:
+            self.cams[cam_name]["path"] = self.usb_cameras_info[cam_name].otherPaths[0]
+        elif numPaths > 1:
+            self.cams[cam_name]["path"] = self.usb_cameras_info[cam_name].otherPaths[1]
+        else:
+            self.cams[cam_name]["path"] = self.usb_cameras_info[cam_name].path
+
+        videoModes = self.usb_cameras[cam_name].enumerateVideoModes()
+        if len(videoModes) == 0:
+            self.cams[cam_name]["video_mode"] = {
+                "fps": 90,
+                "width": 320,
+                "height": 240,
+                "pixel_format": 'kYUYV'
+            }
+            self.cams[cam_name]["is_picam"] = True
+        else:
+            video_mode = videoModes[0]
+            self.cams[cam_name]["video_mode"] = {
+                "fps": video_mode.fps,
+                "width": video_mode.width,
+                "height": video_mode.height,
+                "pixel_format": str(video_mode.pixelFormat).split('.')[1],
+            }
         self.cams[cam_name]['resolution'] = 0
         self.cams[cam_name]["FOV"] = 60.8
 
